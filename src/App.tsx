@@ -40,7 +40,6 @@ function App() {
     const [username, saveUsername] = useUsername();
     const [roomName, setRoomName] = useRoomName();
     const [inGame, setInGame] = useState(Boolean(username && roomName));
-    const uwu = window.location.search.indexOf("uwu") !== -1;
     if (!username || !roomName || !inGame) {
         if (inGame) {
             setInGame(false); // bad practice
@@ -51,7 +50,7 @@ function App() {
         };
         return (
             <header className={styles.header}>
-                {uwu ? <img className={styles.logo} src={LOGO.toString()} alt="the ruffians" /> : <h1>the ruffians</h1>}
+                <img className={styles.logo} src={LOGO.toString()} alt="the ruffians" />
                 <div>
                     What's your name?
                     <br />
