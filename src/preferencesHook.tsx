@@ -5,7 +5,7 @@ export type Preferences = {
 };
 
 const DEFAULT_PREFERENCES: Preferences = {
-    fourColorSuits: true,
+    fourColorSuits: false,
 };
 
 const STORAGE_KEY = "ruffians-preferences";
