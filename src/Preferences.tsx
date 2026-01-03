@@ -22,8 +22,8 @@ export function PreferencesPanel(props: PreferencesProps) {
                     />
                     <label htmlFor="fourColorSuits">Four-color suits</label>
                     <p className={styles.description}>
-                        Display each suit in a different color (clubs: teal, diamonds: orange, hearts: red, spades:
-                        blue) using Balatro colors instead of traditional two colors.
+                        Display each suit in a different color (clubs: blue, diamonds: orange, hearts: red, spades:
+                        gray) using Balatro Joker colors instead of traditional two colors.
                     </p>
                 </div>
                 <button onClick={onClose}>Close</button>
