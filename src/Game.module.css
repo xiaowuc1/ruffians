@@ -71,6 +71,18 @@
     font-size: 28px;
     line-height: 28px;
 }
+.clubsSuit {
+    color: #235955;
+}
+.diamondsSuit {
+    color: #f06b3f;
+}
+.heartsSuit {
+    color: #f03464;
+}
+.spadesSuit {
+    color: #3c4368;
+}
 .redSuit {
     color: #e00;
 }

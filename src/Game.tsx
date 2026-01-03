@@ -21,6 +21,7 @@ import { bestHandAmong, HandKind, PokerHand, pokerHandLessThan } from "./pokerSc
 import { useContext, useEffect, useMemo, useState } from "react";
 import { TOKEN_STYLES, TokenAnimator, TokenV } from "./TokenV";
 import { FxProvider, FxContext } from "./Fx";
+import { PreferencesPanel, usePreferences, PreferencesProvider } from "./Preferences";
 
 type Props = {
     username: string;
@@ -33,6 +34,15 @@ export function Game(props: Props) {
     if (!game) {
         return <div>loading...</div>;
     }
+    return (
+        <PreferencesProvider>
+            <GameInner username={username} setUsername={setUsername} game={game} />
+        </PreferencesProvider>
+    );
+}
+
+function GameInner(props: { username: string; setUsername: (name: string) => void; game: Immutable<GameRoom> }) {
+    const { username, setUsername, game } = props;
     switch (game.gameState.phase) {
         case RoomPhase.SETUP:
             // https://github.com/microsoft/TypeScript/issues/18758
@@ -219,6 +229,8 @@ type BiddingGameProps = {
 function BiddingGame(props: BiddingGameProps) {
     const { username, setUsername, game } = props;
     const inRoom = game.gameState.players.some((p) => p.name === username);
+    const [preferences] = usePreferences();
+    const [showPreferences, setShowPreferences] = useState(false);
     const [, setSelectCard] = useMutateGame(game, selectCardMutator);
     const selectCard = (card: DeckCard, index: number) => {
         setSelectCard([username, card, index]);
@@ -244,10 +256,11 @@ function BiddingGame(props: BiddingGameProps) {
                                         <CardStack
                                             cards={c}
                                             onClick={p.name === username ? selectCard : undefined}
+                                            fourColorSuits={preferences.fourColorSuits}
                                             key={i}
                                         />
                                     ) : (
-                                        <Card card={c} key={i} />
+                                        <Card card={c} fourColorSuits={preferences.fourColorSuits} key={i} />
                                     )
                                 ) : (
                                     <NoCard key={i} />
@@ -278,8 +291,9 @@ function BiddingGame(props: BiddingGameProps) {
                         : `Round ${game.gameState.log.length}`}{" "}
                     {!inRoom && "(You are spectating.)"}
                     {inRoom && <KillGameButton game={game} />}
+                    <button onClick={() => setShowPreferences(true)}>⚙</button>
                 </div>
-                <CommunityCards gameState={game.gameState} />
+                <CommunityCards gameState={game.gameState} fourColorSuits={preferences.fourColorSuits} />
                 <div className={styles.tokenPool}>
                     {game.gameState.tokens.map((token, i) => (
                         <TokenV
@@ -298,6 +312,7 @@ function BiddingGame(props: BiddingGameProps) {
                 </button>
                 <GameLog players={game.gameState.players} jokerLog={game.gameState.jokerLog} log={game.gameState.log} />
             </div>
+            {showPreferences && <PreferencesPanel onClose={() => setShowPreferences(false)} />}
         </div>
     );
 }
@@ -356,6 +371,8 @@ type ScoringGameProps = {
 function ScoringGame(props: ScoringGameProps) {
     const { username, game } = props;
     const { players, communityCards, revealIndex } = game.gameState;
+    const [preferences] = usePreferences();
+    const [showPreferences, setShowPreferences] = useState(false);
     const handScores = useMemo(
         () => players.map((p) => bestHandAmong([...p.hand, ...communityCards])),
         [players, communityCards]
@@ -411,7 +428,12 @@ function ScoringGame(props: ScoringGameProps) {
                         <div className={styles.hand}>
                             {p.hand.map((c, i) =>
                                 !inRoom || p.name === username || p.token!.index <= revealIndex ? (
-                                    <Card card={c} highlight={revealedPlayerBestHand.has(c)} key={i} />
+                                    <Card
+                                        card={c}
+                                        highlight={revealedPlayerBestHand.has(c)}
+                                        fourColorSuits={preferences.fourColorSuits}
+                                        key={i}
+                                    />
                                 ) : (
                                     <NoCard key={i} />
                                 )
@@ -431,8 +453,13 @@ function ScoringGame(props: ScoringGameProps) {
                 <WinRecordView record={nextWinRecord} />
                 <div className={styles.heading}>
                     Scoring: {revealIndex} ({players[revealedPlayerIndex].name})
+                    <button onClick={() => setShowPreferences(true)}>⚙</button>
                 </div>
-                <CommunityCards gameState={game.gameState} highlight={revealedPlayerBestHand} />
+                <CommunityCards
+                    gameState={game.gameState}
+                    highlight={revealedPlayerBestHand}
+                    fourColorSuits={preferences.fourColorSuits}
+                />
                 <div className={styles.revealLog}>
                     {playerScores.slice(1, revealIndex).map((p, j) => {
                         const i = j + 1;
@@ -467,6 +494,7 @@ function ScoringGame(props: ScoringGameProps) {
                 )}
                 <GameLog players={game.gameState.players} jokerLog={game.gameState.jokerLog} log={game.gameState.log} />
             </div>
+            {showPreferences && <PreferencesPanel onClose={() => setShowPreferences(false)} />}
         </div>
     );
 }
@@ -474,9 +502,11 @@ function ScoringGame(props: ScoringGameProps) {
 function CommunityCards({
     gameState,
     highlight,
+    fourColorSuits,
 }: {
     gameState: Immutable<StartedState>;
     highlight?: Set<Immutable<DeckCard>>;
+    fourColorSuits?: boolean;
 }) {
     // Group up cards into their rounds
     const rounds = gameState.pastRounds
@@ -497,7 +527,7 @@ function CommunityCards({
                         {start < gameState.communityCards.length
                             ? gameState.communityCards
                                   .slice(start, end)
-                                  .map((c, j) => <CardStack cards={c} key={j} highlight={highlight} />)
+                                  .map((c, j) => <CardStack cards={c} key={j} highlight={highlight} fourColorSuits={fourColorSuits} />)
                             : Array.from({ length: cards }).map((_, j) => <NoCard key={j} />)}
                     </div>
                 );
@@ -624,8 +654,28 @@ const UNICODE_SUITS = {
     [Suit.Spades]: "♠",
 };
 
-function Card(props: { card: Immutable<DeckCard>; onClick?: () => void; highlight?: boolean }) {
-    const { card, onClick, highlight } = props;
+const FOUR_COLOR_SUIT_STYLES = {
+    [Suit.Clubs]: styles.clubsSuit,
+    [Suit.Diamonds]: styles.diamondsSuit,
+    [Suit.Hearts]: styles.heartsSuit,
+    [Suit.Spades]: styles.spadesSuit,
+};
+
+const TWO_COLOR_SUIT_STYLES = {
+    [Suit.Clubs]: styles.blackSuit,
+    [Suit.Diamonds]: styles.redSuit,
+    [Suit.Hearts]: styles.redSuit,
+    [Suit.Spades]: styles.blackSuit,
+};
+
+function Card(props: {
+    card: Immutable<DeckCard>;
+    onClick?: () => void;
+    highlight?: boolean;
+    fourColorSuits?: boolean;
+}) {
+    const { card, onClick, highlight, fourColorSuits = true } = props;
+    const suitStyles = fourColorSuits ? FOUR_COLOR_SUIT_STYLES : TWO_COLOR_SUIT_STYLES;
     return (
         <div
             className={`${styles.card} ${highlight ? styles.cardHighlight : ""} ${
@@ -639,13 +689,7 @@ function Card(props: { card: Immutable<DeckCard>; onClick?: () => void; highligh
                 <>
                     {formatCardValue(card.value)}
                     <br />
-                    <span
-                        className={
-                            card.suit === Suit.Diamonds || card.suit === Suit.Hearts ? styles.redSuit : styles.blackSuit
-                        }
-                    >
-                        {UNICODE_SUITS[card.suit]}
-                    </span>
+                    <span className={suitStyles[card.suit]}>{UNICODE_SUITS[card.suit]}</span>
                 </>
             )}
         </div>
@@ -656,8 +700,9 @@ function CardStack(props: {
     cards: Immutable<DeckCard[]>;
     onClick?: (card: DeckCard, index: number) => void;
     highlight?: Set<Immutable<DeckCard>>;
+    fourColorSuits?: boolean;
 }) {
-    const { cards, onClick, highlight } = props;
+    const { cards, onClick, highlight, fourColorSuits } = props;
     return (
         <div className={styles.cardStack}>
             {cards.map((card, i) => (
@@ -665,6 +710,7 @@ function CardStack(props: {
                     card={card}
                     onClick={onClick != null ? () => onClick(card, i) : undefined}
                     highlight={highlight?.has(card)}
+                    fourColorSuits={fourColorSuits}
                     key={i}
                 />
             ))}

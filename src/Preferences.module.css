@@ -1,0 +1,50 @@
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.panel {
+    background-color: #222;
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.panel h2 {
+    margin-top: 0;
+    margin-bottom: 16px;
+}
+
+.option {
+    margin: 16px 0;
+}
+
+.option input[type="checkbox"] {
+    margin-right: 8px;
+    cursor: pointer;
+}
+
+.option label {
+    cursor: pointer;
+    font-weight: 500;
+}
+
+.description {
+    margin: 8px 0 0 24px;
+    font-size: 14px;
+    color: #aaa;
+}
+
+.panel button {
+    margin-top: 16px;
+}
