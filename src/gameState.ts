@@ -1,5 +1,10 @@
 import { Token, PokerCard, Round, DeckCard } from "./gameTypes";
 
+export enum GameMode {
+    TEXAS_HOLDEM = "texas_holdem",
+    OMAHA = "omaha",
+}
+
 export enum RoomPhase {
     SETUP = "setup",
     BIDDING = "bidding",
@@ -11,6 +16,7 @@ export interface SetupPlayer {
 }
 
 export interface Config {
+    gameMode?: GameMode;
     withJokers: boolean;
     targetWins: number;
     targetLosses: number;
@@ -26,7 +32,7 @@ export interface SetupState {
 export const NEW_ROOM: SetupState = {
     phase: RoomPhase.SETUP,
     players: [],
-    config: { withJokers: false, targetWins: 3, targetLosses: 3 },
+    config: { gameMode: GameMode.TEXAS_HOLDEM, withJokers: false, targetWins: 3, targetLosses: 3 },
 };
 
 export interface StartedPlayer<PlayerCard> {
