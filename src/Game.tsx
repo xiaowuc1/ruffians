@@ -155,7 +155,7 @@ function SetupGame(props: SetupGameProps) {
                             }
                             onChange={() => setGameMode(GameMode.TEXAS_HOLDEM)}
                         />
-                        <label htmlFor="texas_holdem">Texas Hold'em (2 cards)</label>
+                        <label htmlFor="texas_holdem">Texas Hold&apos;em (2 cards)</label>
                     </div>
                     <div>
                         <input
