@@ -2,6 +2,7 @@ import { GameRoom, useGame, useMutateGame } from "./gameHook";
 import { advanceRound, DEFAULT_GAME, gameHandsAreResolved, makeInitialGame, maybeResolveJokers } from "./gameImpl";
 import {
     BiddingState,
+    GameMode,
     JokerLogEntry,
     NEW_ROOM,
     RoomPhase,
@@ -17,7 +18,7 @@ import { CardValue, DeckCard, Suit, Token } from "./gameTypes";
 import { deepEqual } from "./utils";
 import * as styles from "./Game.module.css";
 import { create, Immutable } from "mutative";
-import { bestHandAmong, HandKind, PokerHand, pokerHandLessThan } from "./pokerScoring";
+import { bestHandAmong, bestOmahaHand, HandKind, PokerHand, pokerHandLessThan } from "./pokerScoring";
 import { useContext, useEffect, useMemo, useState } from "react";
 import { TOKEN_STYLES, TokenAnimator, TokenV } from "./TokenV";
 import { FxProvider, FxContext } from "./Fx";
@@ -85,6 +86,11 @@ function withJokersMutator(game: Immutable<SetupState>, withJokers: boolean): Im
         draft.config.withJokers = withJokers;
     });
 }
+function gameModeMutator(game: Immutable<SetupState>, gameMode: GameMode): Immutable<SetupState> {
+    return create(game, (draft) => {
+        draft.config.gameMode = gameMode;
+    });
+}
 function startGameMutator(game: Immutable<SetupState>): Immutable<StartedState> {
     return makeInitialGame(game.players, game.config);
 }
@@ -97,6 +103,7 @@ function SetupGame(props: SetupGameProps) {
     const joinRoom = () => setJoinRoom(username);
 
     const [withJokersMutation, setWithJokers] = useMutateGame(game, withJokersMutator);
+    const [gameModeMutation, setGameMode] = useMutateGame(game, gameModeMutator);
 
     const [, setStartGame] = useMutateGame(game, startGameMutator);
     const startGame = () => setStartGame(true);
@@ -135,9 +142,43 @@ function SetupGame(props: SetupGameProps) {
                 />{" "}
                 <label htmlFor="with_jokers">Include jokers in the deck</label>
                 <br />
+                <div>
+                    <label>Game Mode:</label>
+                    <div>
+                        <input
+                            type="radio"
+                            name="gameMode"
+                            id="texas_holdem"
+                            checked={
+                                (gameModeMutation ?? game.gameState.config.gameMode ?? GameMode.TEXAS_HOLDEM) ===
+                                GameMode.TEXAS_HOLDEM
+                            }
+                            onChange={() => setGameMode(GameMode.TEXAS_HOLDEM)}
+                        />
+                        <label htmlFor="texas_holdem">Texas Hold&apos;em (2 cards)</label>
+                    </div>
+                    <div>
+                        <input
+                            type="radio"
+                            name="gameMode"
+                            id="omaha"
+                            checked={
+                                (gameModeMutation ?? game.gameState.config.gameMode ?? GameMode.TEXAS_HOLDEM) ===
+                                GameMode.OMAHA
+                            }
+                            onChange={() => setGameMode(GameMode.OMAHA)}
+                        />
+                        <label htmlFor="omaha">Omaha (4 cards)</label>
+                    </div>
+                </div>
                 <button
                     className="startGame"
-                    disabled={!inRoom || game.gameState.players.length < 2 || withJokersMutation != null}
+                    disabled={
+                        !inRoom ||
+                        game.gameState.players.length < 2 ||
+                        withJokersMutation != null ||
+                        gameModeMutation != null
+                    }
                     onClick={startGame}
                 >
                     Start game
@@ -288,7 +329,11 @@ function BiddingGame(props: BiddingGameProps) {
                 <div className={styles.heading}>
                     {waitingForJoker
                         ? "Waiting for players to choose their cards"
-                        : `Round ${game.gameState.log.length}`}{" "}
+                        : `Round ${game.gameState.log.length} - ${
+                              (game.gameState.config.gameMode ?? GameMode.TEXAS_HOLDEM) === GameMode.OMAHA
+                                  ? "Omaha"
+                                  : "Hold'em"
+                          }`}{" "}
                     {!inRoom && "(You are spectating.)"}
                     {inRoom && <KillGameButton game={game} />}
                     <button onClick={() => setShowPreferences(true)}>⚙</button>
@@ -374,8 +419,14 @@ function ScoringGame(props: ScoringGameProps) {
     const [preferences] = usePreferences();
     const [showPreferences, setShowPreferences] = useState(false);
     const handScores = useMemo(
-        () => players.map((p) => bestHandAmong([...p.hand, ...communityCards])),
-        [players, communityCards]
+        () =>
+            players.map((p) => {
+                const mode = game.gameState.config.gameMode ?? GameMode.TEXAS_HOLDEM;
+                return mode === GameMode.OMAHA
+                    ? bestOmahaHand(p.hand, communityCards)
+                    : bestHandAmong([...p.hand, ...communityCards]);
+            }),
+        [players, communityCards, game.gameState.config.gameMode]
     );
     const inRoom = players.some((p) => p.name === username);
     const [, setRevealIndex] = useMutateGame(game, setRevealIndexMutator);
@@ -452,7 +503,10 @@ function ScoringGame(props: ScoringGameProps) {
             <div>
                 <WinRecordView record={nextWinRecord} />
                 <div className={styles.heading}>
-                    Scoring: {revealIndex} ({players[revealedPlayerIndex].name})
+                    Scoring: {revealIndex} ({players[revealedPlayerIndex].name}) -{" "}
+                    {(game.gameState.config.gameMode ?? GameMode.TEXAS_HOLDEM) === GameMode.OMAHA
+                        ? "Omaha"
+                        : "Hold'em"}
                     <button onClick={() => setShowPreferences(true)}>⚙</button>
                 </div>
                 <CommunityCards

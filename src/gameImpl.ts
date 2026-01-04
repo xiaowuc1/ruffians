@@ -3,6 +3,7 @@ import {
     BiddingState,
     BiddingStateWithoutJokers,
     Config,
+    GameMode,
     NEW_ROOM,
     RoomPhase,
     SetupPlayer,
@@ -27,13 +28,14 @@ export function makeInitialGame(
     winRecord?: WinRecord
 ): Immutable<StartedState> {
     const deck = makeDeck(config.withJokers);
+    const numCards = config.gameMode === GameMode.OMAHA ? 4 : 2;
     const state: Immutable<BiddingState> = {
         phase: RoomPhase.BIDDING,
         config,
         players: players.map((p) => ({
             name: p.name,
-            // deal two cards to each player
-            hand: deck.splice(0, 2),
+            // deal cards to each player (2 for Hold'em, 4 for Omaha)
+            hand: deck.splice(0, numCards),
             pastTokens: [],
             token: null,
         })),

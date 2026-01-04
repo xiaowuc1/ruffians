@@ -118,3 +118,43 @@ export function bestHandAmong(cards: Immutable<(PokerCard | PokerCard[])[]>): Im
     dfs(0);
     return best!;
 }
+
+export function bestOmahaHand(
+    holeCards: Immutable<PokerCard[]>,
+    communityCards: Immutable<(PokerCard | PokerCard[])[]>
+): Immutable<[PokerCard[], PokerHand]> {
+    if (holeCards.length !== 4) throw new Error("Omaha requires 4 hole cards");
+    if (communityCards.length !== 5) throw new Error("Omaha requires 5 community cards");
+
+    // Flatten community cards (handle joker expansions)
+    const flatCommunity: Immutable<PokerCard[]>[] = communityCards.map((c) => (c instanceof Array ? c : [c]));
+
+    let best: Immutable<[PokerCard[], PokerHand]> | null = null;
+
+    // Try all C(4,2) = 6 combinations of hole cards
+    for (let h1 = 0; h1 < 4; h1++) {
+        for (let h2 = h1 + 1; h2 < 4; h2++) {
+            // Try all C(5,3) = 10 combinations of community cards
+            for (let c1 = 0; c1 < 5; c1++) {
+                for (let c2 = c1 + 1; c2 < 5; c2++) {
+                    for (let c3 = c2 + 1; c3 < 5; c3++) {
+                        // Handle joker card arrays
+                        for (const card1 of flatCommunity[c1]) {
+                            for (const card2 of flatCommunity[c2]) {
+                                for (const card3 of flatCommunity[c3]) {
+                                    const hand = [holeCards[h1], holeCards[h2], card1, card2, card3];
+                                    const score = scoreHand(hand);
+                                    if (best == null || pokerHandLessThan(best[1], score)) {
+                                        best = [hand, score];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return best!;
+}
