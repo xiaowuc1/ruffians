@@ -124,7 +124,7 @@ export function bestOmahaHand(
     communityCards: Immutable<(PokerCard | PokerCard[])[]>
 ): Immutable<[PokerCard[], PokerHand]> {
     if (holeCards.length !== 4) throw new Error("Omaha requires 4 hole cards");
-    if (communityCards.length < 5) throw new Error("Omaha requires 5 community cards");
+    if (communityCards.length !== 5) throw new Error("Omaha requires 5 community cards");
 
     // Flatten community cards (handle joker expansions)
     const flatCommunity: Immutable<PokerCard[]>[] = communityCards.map((c) => (c instanceof Array ? c : [c]));
