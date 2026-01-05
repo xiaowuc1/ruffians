@@ -143,7 +143,7 @@ function SetupGame(props: SetupGameProps) {
                 <label htmlFor="with_jokers">Include jokers in the deck</label>
                 <br />
                 <div>
-                    <label>Game Mode:</label>
+                    <label>Game mode:</label>
                     <div>
                         <input
                             type="radio"
@@ -319,6 +319,9 @@ function BiddingGame(props: BiddingGameProps) {
                                     }
                                 />
                             )}
+                            {game.gameState.futureRounds.map((_, i) => (
+                                <div className={styles.tokenPlaceholder} key={i} />
+                            ))}
                         </div>
                         <div className={styles.handScore}>&nbsp;</div>
                     </div>
@@ -334,7 +337,7 @@ function BiddingGame(props: BiddingGameProps) {
                                   ? "Omaha"
                                   : "Hold'em"
                           }`}{" "}
-                    {!inRoom && "(You are spectating.)"}
+                    {!inRoom && "(You are spectating.) "}
                     {inRoom && <KillGameButton game={game} />}
                     <button onClick={() => setShowPreferences(true)}>⚙</button>
                 </div>
@@ -489,7 +492,7 @@ function ScoringGame(props: ScoringGameProps) {
                                     <NoCard key={i} />
                                 )
                             )}
-                            {p.pastTokens.map((t) => (
+                            {p.pastTokens.map((t, i) => (
                                 <TokenV token={t} past={true} disabled={true} key={i} />
                             ))}
                             <TokenV token={p.token!} disabled={true} />
@@ -504,9 +507,7 @@ function ScoringGame(props: ScoringGameProps) {
                 <WinRecordView record={nextWinRecord} />
                 <div className={styles.heading}>
                     Scoring: {revealIndex} ({players[revealedPlayerIndex].name}) -{" "}
-                    {(game.gameState.config.gameMode ?? GameMode.TEXAS_HOLDEM) === GameMode.OMAHA
-                        ? "Omaha"
-                        : "Hold'em"}
+                    {(game.gameState.config.gameMode ?? GameMode.TEXAS_HOLDEM) === GameMode.OMAHA ? "Omaha" : "Hold'em"}{" "}
                     <button onClick={() => setShowPreferences(true)}>⚙</button>
                 </div>
                 <CommunityCards
