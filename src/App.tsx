@@ -34,7 +34,7 @@ function useRoomName(): [string | null, (roomName: string | null) => void] {
     ];
 }
 
-const LOGO = new URL('../uwu_plain.svg', import.meta.url);
+const LOGO = new URL("../uwu_plain.svg", import.meta.url);
 
 function App() {
     const [username, saveUsername] = useUsername();
@@ -45,7 +45,8 @@ function App() {
             setInGame(false); // bad practice
         }
         const newRoom = async () => {
-            setRoomName((await callMakeRoom(NEW_ROOM)).room);
+            if (!username) return;
+            setRoomName((await callMakeRoom({ ...NEW_ROOM, players: [{ name: username }] })).room);
             setInGame(true);
         };
         return (
@@ -65,7 +66,7 @@ function App() {
                 )}
                 {roomName && (
                     <>
-                        <button onClick={() => setInGame(true)}>Join game ({roomName})</button>
+                        <button onClick={() => setInGame(true)}>View game ({roomName})</button>
                     </>
                 )}
             </header>

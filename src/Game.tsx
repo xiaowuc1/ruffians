@@ -123,7 +123,11 @@ function SetupGame(props: SetupGameProps) {
                         )}
                     </div>
                 ))}
-                {!inRoom && <button onClick={joinRoom}>Join</button>}
+                {!inRoom && (
+                    <div className={styles.player}>
+                        <button onClick={joinRoom}>Join room</button>
+                    </div>
+                )}
             </div>
             <div>
                 {game.gameState.winRecord && (
